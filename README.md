@@ -50,7 +50,7 @@ To host this on a Linux server (e.g. a DigitalOcean Droplet, AWS EC2, or any Ubu
 ssh user@your-server-ip
 
 # 2. Clone the repo
-git clone https://github.com/your-username/light-ansible.git
+git clone https://github.com/SimeonVarg/Light-Ansible.git
 cd light-ansible
 
 # 3. Set up the environment

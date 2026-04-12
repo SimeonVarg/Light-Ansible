@@ -1,0 +1,25 @@
+packages:
+  - vim
+  - git
+  - curl
+
+users:
+  - simeon_test
+  - deploy_user
+
+files:
+  - path: "/tmp/compliance_check.txt"
+    permissions: "0644"
+
+# Ensure these systemd services are running and enabled
+services:
+  - name: ssh
+    state: running   # running | stopped
+    enabled: true
+
+# Cron jobs to enforce
+cron_jobs:
+  - name: "nightly log cleanup"
+    user: root
+    schedule: "0 2 * * *"
+    command: "find /var/log -name '*.gz' -mtime +30 -delete"

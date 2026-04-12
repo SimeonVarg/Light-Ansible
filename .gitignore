@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+
+# Virtual environment
+venv/
+env/
+.env
+
+# Flask / runtime generated files
+compliance_report.json
+run_history.json
+
+# Logs
+*.log
+
+# Kiro IDE
+.kiro/
+
+# VS Code
+.vscode/
+
+# Temp / dev scripts
+_test_render.py
+write_template.py
+CONTEXT.md
+
+# Job description (personal)
+General Dynamics Linux Automation Intern.md
+
+# OS
+.DS_Store
+Thumbs.db

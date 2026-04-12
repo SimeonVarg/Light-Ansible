@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Light-Ansible</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --bg:#080c14;--surface:#0e1420;--surface2:#131a28;
+      --border:#1e2d45;--border2:#243450;
+      --text:#cdd6f4;--muted:#6c7a96;
+      --accent:#4fc3f7;--accent2:#0288d1;
+      --green:#4ade80;--yellow:#fbbf24;--red:#f87171;--purple:#a78bfa;
+      --sw:240px;
+    }
+    body{font-family:'Inter',-apple-system,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;font-size:14px}
+    a{text-decoration:none}
+    code{font-family:'JetBrains Mono',monospace;font-size:.78em;background:rgba(255,255,255,.06);padding:1px 5px;border-radius:3px}
+
+    /* sidebar */
+    .sb{width:var(--sw);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:20}
+    .sb-brand{padding:20px;border-bottom:1px solid var(--border)}
+    .sb-row{display:flex;align-items:center;gap:10px;margin-bottom:5px}
+    .sb-icon{width:32px;height:32px;background:linear-gradient(135deg,var(--accent2),var(--accent));border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 0 16px rgba(79,195,247,.3);flex-shrink:0}
+    .sb-name{font-size:.95rem;font-weight:700;color:#e8f4fd}
+    .sb-sub{font-size:.7rem;color:var(--muted)}
+    .demo-pill{display:inline-flex;align-items:center;gap:5px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.25);color:var(--accent);font-size:.65rem;font-weight:600;padding:2px 8px;border-radius:20px;letter-spacing:.06em;text-transform:uppercase;margin-top:8px}
+    .demo-pill::before{content:'';width:5px;height:5px;background:var(--accent);border-radius:50%;animation:pulse 2s infinite}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    .nav-sec{font-size:.62rem;font-weight:600;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);padding:16px 20px 5px;display:block}
+    .nav-a{display:flex;align-items:center;gap:10px;padding:9px 20px;color:var(--muted);font-size:.82rem;font-weight:500;border-left:2px solid transparent;transition:all .15s}
+    .nav-a:hover{color:var(--text);background:rgba(255,255,255,.03)}
+    .nav-a.on{color:var(--accent);border-left-color:var(--accent);background:rgba(79,195,247,.06)}
+    .sb-foot{margin-top:auto;padding:14px 20px;border-top:1px solid var(--border);font-size:.72rem;color:var(--muted)}
+    .sys-row{display:flex;align-items:center;gap:6px;margin-bottom:3px}
+    .dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);flex-shrink:0}
+    .dot.y{background:var(--yellow);box-shadow:0 0 6px var(--yellow)}
+
+    /* main */
+    .main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+    .topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 28px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10}
+    .tb-left{display:flex;align-items:center;gap:8px;font-size:.82rem;color:var(--muted)}
+    .tb-page{color:var(--text);font-weight:500}
+    .chip{display:inline-flex;align-items:center;gap:5px;font-size:.72rem;font-weight:500;padding:3px 10px;border-radius:20px}
+    .chip::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .chip.live{background:rgba(74,222,128,.1);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+    .chip.demo{background:rgba(79,195,247,.1);color:var(--accent);border:1px solid rgba(79,195,247,.2)}
+
+    /* banners */
+    .banner{padding:12px 28px;display:flex;align-items:flex-start;gap:12px;font-size:.8rem;line-height:1.6;border-bottom:1px solid}
+    .banner.demo-b{background:linear-gradient(90deg,rgba(2,136,209,.08),transparent);border-color:rgba(79,195,247,.2);color:#90caf9}
+    .banner.warn-b{background:linear-gradient(90deg,rgba(251,191,36,.06),transparent);border-color:rgba(251,191,36,.2);color:#fde68a}
+    .banner strong{font-weight:600}
+    .banner a{color:inherit;text-decoration:underline;text-underline-offset:2px}
+
+    /* content */
+    .content{padding:28px 32px;flex:1;max-width:1100px}
+
+    /* hero */
+    .hero{background:linear-gradient(135deg,var(--surface2) 0%,#0a1628 100%);border:1px solid var(--border);border-radius:12px;padding:32px 36px;margin-bottom:28px;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;top:-60px;right:-60px;width:240px;height:240px;background:radial-gradient(circle,rgba(79,195,247,.07) 0%,transparent 70%);pointer-events:none}
+    .hero-eye{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.12em;color:var(--accent);margin-bottom:10px}
+    .hero h2{font-size:1.5rem;font-weight:700;color:#e8f4fd;margin-bottom:10px;line-height:1.3}
+    .hero p{font-size:.85rem;color:var(--muted);max-width:580px;line-height:1.7;margin-bottom:20px}
+    .tags{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+    .tag{font-size:.7rem;font-weight:500;padding:3px 10px;border-radius:4px;background:rgba(79,195,247,.08);border:1px solid rgba(79,195,247,.18);color:var(--accent);font-family:'JetBrains Mono',monospace}
+    .hero-acts{display:flex;gap:10px;flex-wrap:wrap}
+
+    /* stat grid */
+    .sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:24px}
+    .sc{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:18px 20px}
+    .sc-lbl{font-size:.68rem;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin-bottom:10px}
+    .sc-val{font-size:1.6rem;font-weight:700;color:#e8f4fd;font-family:'JetBrains Mono',monospace;line-height:1}
+    .sc-sub{font-size:.72rem;color:var(--muted);margin-top:5px}
+    .bw{background:var(--border);border-radius:3px;height:3px;margin-top:10px;overflow:hidden}
+    .b{height:100%;border-radius:3px;transition:width .6s ease}
+    .b.g{background:linear-gradient(90deg,#166534,var(--green))}
+    .b.y{background:linear-gradient(90deg,#92400e,var(--yellow))}
+    .b.r{background:linear-gradient(90deg,#7f1d1d,var(--red))}
+
+    /* panel */
+    .panel{background:var(--surface);border:1px solid var(--border);border-radius:10px;margin-bottom:20px;overflow:hidden}
+    .ph{padding:14px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .pt{font-size:.82rem;font-weight:600;color:#e8f4fd;display:flex;align-items:center;gap:8px}
+    .pt-ic{width:20px;height:20px;background:rgba(79,195,247,.1);border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:.7rem}
+    .pb{padding:20px}
+
+    /* buttons */
+    .btn{display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:7px;border:1px solid var(--border2);font-size:.78rem;font-weight:500;cursor:pointer;transition:all .15s;color:var(--text);background:var(--surface2);font-family:'Inter',sans-serif;white-space:nowrap}
+    .btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(79,195,247,.05)}
+    .btn.pri{background:linear-gradient(135deg,var(--accent2),#0369a1);border-color:var(--accent2);color:#fff;box-shadow:0 2px 12px rgba(2,136,209,.3)}
+    .btn.pri:hover{background:linear-gradient(135deg,#0369a1,var(--accent2));color:#fff}
+    .btn.gh{background:transparent;border-color:var(--border);color:var(--muted)}
+    .btn.gh:hover{border-color:var(--border2);color:var(--text);background:rgba(255,255,255,.03)}
+    .btn:disabled{opacity:.35;cursor:not-allowed;pointer-events:none}
+
+    /* action cards */
+    .ag{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;margin-bottom:24px}
+    .ac{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px;cursor:pointer;transition:all .18s}
+    .ac:hover{border-color:var(--border2);transform:translateY(-1px)}
+    .ac.sel{border-color:var(--accent);background:rgba(79,195,247,.05);box-shadow:0 0 0 1px rgba(79,195,247,.15),0 4px 20px rgba(79,195,247,.08)}
+    .ac-iw{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:14px}
+    .ac-iw.bl{background:rgba(2,136,209,.15);border:1px solid rgba(2,136,209,.25)}
+    .ac-iw.yl{background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.2)}
+    .ac-iw.gn{background:rgba(74,222,128,.1);border:1px solid rgba(74,222,128,.2)}
+    .ac-t{font-size:.88rem;font-weight:600;color:#e8f4fd;margin-bottom:6px}
+    .ac-d{font-size:.76rem;color:var(--muted);line-height:1.6}
+    .ac-tag{display:inline-block;font-size:.62rem;font-weight:600;padding:1px 6px;border-radius:3px;background:rgba(251,191,36,.12);border:1px solid rgba(251,191,36,.2);color:var(--yellow);font-family:'JetBrains Mono',monospace;margin-left:6px;vertical-align:middle}
+
+    /* terminal */
+    .tw{background:#04080f;overflow:hidden}
+    .ttb{background:var(--surface2);border-bottom:1px solid var(--border);padding:8px 14px;display:flex;align-items:center;gap:6px}
+    .td{width:10px;height:10px;border-radius:50%}
+    .td.r{background:#ff5f57}.td.y{background:#febc2e}.td.g{background:#28c840}
+    .ttb span{margin-left:8px;font-size:.7rem;color:var(--muted);font-family:'JetBrains Mono',monospace}
+    .term{padding:16px 18px;font-family:'JetBrains Mono',monospace;font-size:.78rem;line-height:1.8;color:#7ec8e3;min-height:220px;max-height:460px;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
+    .t-m{color:#3d5166}.t-ok{color:var(--green)}.t-w{color:var(--yellow)}.t-e{color:var(--red)}.t-i{color:var(--accent)}.t-d{color:#4a6080}
+
+    /* log lines */
+    .ll{display:block}
+    .ll.AL{color:var(--red)}.ll.WA{color:var(--yellow)}.ll.IN{color:#6b8caa}
+
+    /* table */
+    table{width:100%;border-collapse:collapse}
+    th{text-align:left;padding:9px 14px;font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);border-bottom:1px solid var(--border)}
+    td{padding:11px 14px;border-bottom:1px solid rgba(30,45,69,.6);font-size:.8rem}
+    tr:last-child td{border-bottom:none}
+    tr:hover td{background:rgba(79,195,247,.02)}
+    .badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:20px;font-size:.68rem;font-weight:600}
+    .badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor}
+    .badge.ok{background:rgba(74,222,128,.08);color:var(--green);border:1px solid rgba(74,222,128,.2)}
+    .badge.ch{background:rgba(79,195,247,.08);color:var(--accent);border:1px solid rgba(79,195,247,.2)}
+    .badge.dr{background:rgba(251,191,36,.08);color:var(--yellow);border:1px solid rgba(251,191,36,.2)}
+    .badge.sk{background:rgba(248,113,113,.08);color:var(--red);border:1px solid rgba(248,113,113,.2)}
+    .pill{display:inline-block;padding:2px 8px;border-radius:4px;font-size:.68rem;font-weight:500;font-family:'JetBrains Mono',monospace;background:rgba(167,139,250,.08);color:var(--purple);border:1px solid rgba(167,139,250,.18)}
+
+    /* report summary */
+    .rs{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:12px;margin-bottom:22px}
+    .rsc{background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:14px 16px;text-align:center}
+    .rsn{font-size:1.8rem;font-weight:700;font-family:'JetBrains Mono',monospace;line-height:1}
+    .rsl{font-size:.65rem;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--muted);margin-top:5px}
+
+    /* config */
+    #ce{width:100%;min-height:360px;background:#04080f;border:1px solid var(--border);border-radius:8px;color:#7ec8e3;font-family:'JetBrains Mono',monospace;font-size:.78rem;padding:18px;resize:vertical;line-height:1.8}
+    #ce:focus{outline:none;border-color:var(--accent)}
+    .ca{display:flex;gap:10px;margin-top:14px;justify-content:flex-end;align-items:center}
+    #ss{font-size:.75rem;color:var(--muted);margin-right:auto}
+
+    /* empty state */
+    .empty{text-align:center;padding:60px 20px;color:var(--muted)}
+    .ei{width:56px;height:56px;background:var(--surface2);border:1px solid var(--border);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:1.4rem;margin:0 auto 16px}
+    .empty h3{font-size:.9rem;color:var(--text);margin-bottom:6px}
+    .empty p{font-size:.8rem;margin-bottom:20px}
+
+    /* run history */
+    .hist-row{display:flex;align-items:center;gap:12px;padding:9px 0;border-bottom:1px solid rgba(30,45,69,.5);font-size:.78rem}
+    .hist-row:last-child{border-bottom:none}
+    .hist-action{font-family:'JetBrains Mono',monospace;font-size:.72rem;color:var(--text);flex:1}
+    .hist-ts{font-size:.68rem;color:var(--muted);white-space:nowrap}
+    .hist-lines{font-size:.68rem;color:var(--muted);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+
+    /* log search */
+    .log-search{display:flex;gap:8px;margin-bottom:0;padding:10px 14px;background:var(--surface2);border-bottom:1px solid var(--border)}
+    #logSearch{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 12px;color:var(--text);font-family:'JetBrains Mono',monospace;font-size:.75rem;outline:none}
+    #logSearch:focus{border-color:var(--accent)}
+    .log-count{font-size:.7rem;color:var(--muted);white-space:nowrap;align-self:center;font-family:'JetBrains Mono',monospace}
+
+    /* kbd shortcut hint */
+    .kbd{display:inline-block;background:var(--surface2);border:1px solid var(--border2);border-radius:3px;padding:1px 5px;font-size:.65rem;font-family:'JetBrains Mono',monospace;color:var(--muted)}
+    /* spinner */
+    .spin{display:inline-block;width:11px;height:11px;border:2px solid rgba(255,255,255,.15);border-top-color:var(--accent);border-radius:50%;animation:sp .65s linear infinite;vertical-align:middle}
+    @keyframes sp{to{transform:rotate(360deg)}}
+    ::-webkit-scrollbar-track{background:transparent}
+    ::-webkit-scrollbar-thumb{background:var(--border2);border-radius:3px}
+  </style>
+</head>
+<body>
+
+<nav class="sb">
+  <div class="sb-brand">
+    <div class="sb-row">
+      <div class="sb-icon">&#9881;</div>
+      <div><div class="sb-name">Light-Ansible</div><div class="sb-sub">Linux State Provisioner</div></div>
+    </div>
+    {% if demo_mode %}<div class="demo-pill">Demo Mode</div>{% endif %}
+  </div>
+  <span class="nav-sec">Overview</span>
+  <a href="/" class="nav-a {% if page=='dashboard' %}on{% endif %}">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </a>
+  <span class="nav-sec">Provisioner</span>
+  <a href="/run" class="nav-a {% if page=='run' %}on{% endif %}">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+    Run Actions
+  </a>
+  <a href="/report" class="nav-a {% if page=='report' %}on{% endif %}">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Compliance Report
+  </a>
+  <span class="nav-sec">System</span>
+  <a href="/logs" class="nav-a {% if page=='logs' %}on{% endif %}">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+    Logs
+  </a>
+  <a href="/config" class="nav-a {% if page=='config' %}on{% endif %}">
+    <svg width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    Config
+  </a>
+  <div class="sb-foot">
+    <div class="sys-row">
+      <div class="dot {% if not is_linux %}y{% endif %}"></div>
+      {{ stats.hostname or "demo-host" }}
+    </div>
+    <div class="sys-row" style="margin-bottom:0">
+      <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      {% if stats.uptime %}up {{ stats.uptime }}{% else %}&#8212;{% endif %}
+    </div>
+  </div>
+</nav>
+
+<div class="main">
+  <div class="topbar">
+    <div class="tb-left">
+      <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg>
+      <span class="tb-page">
+        {% if page=='dashboard' %}Dashboard
+        {% elif page=='run' %}Run Actions
+        {% elif page=='report' %}Compliance Report
+        {% elif page=='logs' %}System Logs
+        {% elif page=='config' %}Config Editor
+        {% endif %}
+      </span>
+    </div>
+    <div>
+      {% if demo_mode %}<span class="chip demo">Demo Mode</span>
+      {% else %}<span class="chip live">Live</span>{% endif %}
+    </div>
+  </div>
+
+  {% if demo_mode %}
+  <div class="banner demo-b">
+    <span style="font-size:1rem;flex-shrink:0">&#129514;</span>
+    <div><strong>Running in Demo Mode</strong> &#8212; All provisioner actions and output are simulated. No real system changes are made. This lets you explore the full UI on any platform. To run for real, deploy on a Linux server with root access &#8212; see the <a href="https://github.com" target="_blank">README on GitHub</a>.</div>
+  </div>
+  {% endif %}
+
+  {% if not is_linux %}
+  <div class="banner warn-b">
+    <span style="font-size:1rem;flex-shrink:0">&#9888;</span>
+    <div><strong>Non-Linux environment.</strong> Tools like <code>apt-get</code>, <code>systemctl</code>, and <code>useradd</code> require Linux. Use <a href="https://learn.microsoft.com/en-us/windows/wsl/install" target="_blank">WSL</a> on Windows or deploy to a Linux server.</div>
+  </div>
+  {% endif %}
+
+  <div class="content">
+
+  {% if page == 'dashboard' %}
+    <div class="hero">
+      <div class="hero-eye">Portfolio Project &#8212; Linux Automation</div>
+      <h2>Lightweight System State Provisioner</h2>
+      <p>Light-Ansible enforces desired system state on Linux servers &#8212; installing packages, managing users, setting file permissions, controlling services, and scheduling cron jobs. Inspired by Ansible's idempotent <code>--check</code> model, built with Python and Bash.</p>
+      <div class="tags">
+        <span class="tag">Python 3</span><span class="tag">Bash</span><span class="tag">YAML</span>
+        <span class="tag">Flask</span><span class="tag">systemd</span><span class="tag">apt/dpkg</span>
+        <span class="tag">idempotent</span><span class="tag">--dry-run</span>
+      </div>
+      <div class="hero-acts">
+        <a href="/run" class="btn pri">&#9654; Run Provisioner</a>
+        <a href="/run?action=dry" class="btn">&#128269; Dry Run</a>
+        <a href="/report" class="btn gh">View Last Report</a>
+      </div>
+    </div>
+
+    <div class="sg">
+      <div class="sc">
+        <div class="sc-lbl">Disk Usage</div>
+        {% if stats.disk %}
+          <div class="sc-val" id="diskVal">{{ stats.disk }}<span style="font-size:1rem;color:var(--muted)">%</span></div>
+          <div class="bw"><div class="b {% if stats.disk|int > 90 %}r{% elif stats.disk|int > 70 %}y{% else %}g{% endif %}" id="diskBar" style="width:{{ stats.disk }}%"></div></div>
+        {% else %}
+          <div class="sc-val" style="color:var(--muted)">&#8212;</div>
+        {% endif %}
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Memory Usage</div>
+        {% if stats.mem %}
+          <div class="sc-val" id="memVal">{{ stats.mem }}<span style="font-size:1rem;color:var(--muted)">%</span></div>
+          <div class="bw"><div class="b {% if stats.mem > 90 %}r{% elif stats.mem > 70 %}y{% else %}g{% endif %}" id="memBar" style="width:{{ stats.mem }}%"></div></div>
+        {% else %}
+          <div class="sc-val" style="color:var(--muted)">&#8212;</div>
+        {% endif %}
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">System Uptime</div>
+        <div class="sc-val" style="font-size:1.1rem;padding-top:4px">{{ stats.uptime or "&#8212;" }}</div>
+        <div class="sc-sub">since last boot</div>
+      </div>
+      <div class="sc">
+        <div class="sc-lbl">Platform</div>
+        <div class="sc-val" style="font-size:1rem;padding-top:4px">{{ "Linux" if is_linux else "Other" }}</div>
+        <div class="sc-sub">{{ stats.hostname or "" }}</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div class="pt"><span class="pt-ic">&#128203;</span>Recent Log Activity</div>
+        <a href="/logs" class="btn gh" style="font-size:.72rem;padding:5px 12px">View all</a>
+      </div>
+      <div class="tw">
+        <div class="term" id="dashLog"><span class="t-m">Loading...</span></div>
+      </div>
+    </div>
+
+    <div class="panel" style="margin-bottom:20px">
+      <div class="ph">
+        <div class="pt"><span class="pt-ic">&#128336;</span>Run History</div>
+        <a href="/run" class="btn gh" style="font-size:.72rem;padding:5px 12px">New run</a>
+      </div>
+      <div class="pb" style="padding:0 20px" id="histPanel"><span class="t-m" style="display:block;padding:16px 0;font-size:.78rem;font-family:'JetBrains Mono',monospace">Loading...</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="ph"><div class="pt"><span class="pt-ic">&#8505;</span>About This Project</div></div>      <div class="pb">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;font-size:.8rem;color:var(--muted);line-height:1.8">
+          <div>
+            <div style="color:var(--text);font-weight:600;margin-bottom:8px">What it does</div>
+            Reads a <code>config.yaml</code> file and enforces desired system state &#8212; idempotently. Run it twice and the second run makes zero changes. Supports packages, users, file permissions, systemd services, and cron jobs.
+          </div>
+          <div>
+            <div style="color:var(--text);font-weight:600;margin-bottom:8px">Why it's relevant</div>
+            Built to demonstrate skills directly aligned with Linux automation engineering &#8212; Python scripting, Bash, YAML-driven configuration, and familiarity with Ansible-style idempotent provisioning patterns used in real systems integration work.
+          </div>
+        </div>
+      </div>
+    </div>
+
+  {% elif page == 'run' %}
+    <div class="ag">
+      <div class="ac" id="c-provisioner" onclick="sel('provisioner')">
+        <div class="ac-iw bl">&#128640;</div>
+        <div class="ac-t">Run Provisioner</div>
+        <div class="ac-d">Enforce the full system state defined in <code>config.yaml</code> &#8212; packages, users, files, services, and cron jobs. Idempotent: safe to run multiple times.</div>
+      </div>
+      <div class="ac" id="c-provisioner_dry_run" onclick="sel('provisioner_dry_run')">
+        <div class="ac-iw yl">&#128269;</div>
+        <div class="ac-t">Dry Run <span class="ac-tag">--check</span></div>
+        <div class="ac-d">Preview exactly what would change without touching the system. Same concept as <code>ansible --check</code>. Safe to run anytime.</div>
+      </div>
+      <div class="ac" id="c-health_check" onclick="sel('health_check')">
+        <div class="ac-iw gn">&#10084;</div>
+        <div class="ac-t">Health Check</div>
+        <div class="ac-d">Sample disk, CPU, and memory usage. Verify key services are running. Results written to the system log.</div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="ph">
+        <div class="pt">
+          <span class="pt-ic">&#9632;</span>
+          Terminal Output
+          <span id="rs" style="font-size:.72rem;font-weight:400;color:var(--muted);margin-left:4px"></span>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <span class="kbd">Enter</span>
+          <button class="btn pri" id="rb" onclick="run()" disabled>Select an action above</button>
+        </div>      </div>
+      <div class="tw">
+        <div class="ttb">
+          <div class="td r"></div><div class="td y"></div><div class="td g"></div>
+          <span id="tt">light-ansible &#8212; bash</span>
+        </div>
+        <div class="term" id="to"><span class="t-m">$ # Select an action above and click Run</span></div>
+      </div>
+    </div>
+
+  {% elif page == 'report' %}
+    {% if not report_found %}
+      <div class="empty">
+        <div class="ei">&#128203;</div>
+        <h3>No compliance report yet</h3>
+        <p>Run the provisioner to generate one.</p>
+        <a href="/run" class="btn pri">Go to Run Actions</a>
+      </div>
+    {% else %}
+      {% set results = report.results %}
+      {% set ok_n  = results | selectattr('status','equalto','ok') | list | length %}
+      {% set ch_n  = results | selectattr('status','in',['installed','created','started','stopped','added']) | list | length %}
+      {% set dr_n  = results | selectattr('status','search','would_') | list | length %}
+      {% set sk_n  = results | selectattr('status','search','skipped') | list | length %}
+
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
+        <div>
+          <div style="font-size:.72rem;color:var(--muted)">Generated</div>
+          <div style="font-size:.82rem;color:var(--text);font-family:'JetBrains Mono',monospace">{{ report.generated_at }}</div>
+        </div>
+        {% if report.dry_run %}<span style="font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:4px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);color:var(--yellow);font-family:'JetBrains Mono',monospace">DRY RUN</span>{% endif %}
+        {% if report.get('demo') %}<span style="font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:4px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.2);color:var(--accent);font-family:'JetBrains Mono',monospace">DEMO</span>{% endif %}
+        <a href="/run" class="btn gh" style="margin-left:auto">Re-run provisioner</a>
+      </div>
+
+      <div class="rs">
+        <div class="rsc"><div class="rsn" style="color:var(--green)">{{ ok_n }}</div><div class="rsl">OK</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--accent)">{{ ch_n }}</div><div class="rsl">Changed</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--yellow)">{{ dr_n }}</div><div class="rsl">Would Change</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--red)">{{ sk_n }}</div><div class="rsl">Skipped</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--text)">{{ results|length }}</div><div class="rsl">Total</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="ph"><div class="pt"><span class="pt-ic">&#128203;</span>Results</div></div>
+        <table>
+          <thead><tr><th>Type</th><th>Name / Path</th><th>Status</th></tr></thead>
+          <tbody>
+            {% for item in results %}
+            {% set lbl = item.get('name') or item.get('path') %}
+            {% set s = item.status %}
+            {% if s == 'ok' %}{% set cls = 'ok' %}
+            {% elif 'would_' in s %}{% set cls = 'dr' %}
+            {% elif 'skipped' in s %}{% set cls = 'sk' %}
+            {% else %}{% set cls = 'ch' %}{% endif %}
+            <tr>
+              <td><span class="pill">{{ item.type }}</span></td>
+              <td style="color:#c8d8f0;font-family:'JetBrains Mono',monospace;font-size:.76rem">{{ lbl }}</td>
+              <td><span class="badge {{ cls }}">{{ s }}</span></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+  {% elif page == 'logs' %}
+    <div class="panel">
+      <div class="ph">
+        <div class="pt">
+          <span class="pt-ic">&#128196;</span>
+          state-provisioner.log
+          <span style="font-size:.7rem;font-weight:400;color:var(--muted);font-family:'JetBrains Mono',monospace">/var/log/</span>
+          <span class="log-count" id="lineCount"></span>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn gh" onclick="clearLogs()" style="font-size:.72rem;color:var(--red);border-color:rgba(248,113,113,.3)">&#128465; Clear</button>
+          <button class="btn gh" onclick="rl()" style="font-size:.72rem">&#8635; Refresh</button>
+        </div>
+      </div>
+      <div class="log-search">
+        <input id="logSearch" type="text" placeholder="Filter logs... (e.g. ERROR, ssh, vim)" oninput="filterLogs()">
+        <span class="log-count" id="filterCount"></span>
+      </div>
+      <div class="tw">
+        <div class="ttb">
+          <div class="td r"></div><div class="td y"></div><div class="td g"></div>
+          <span>tail -f /var/log/state-provisioner.log</span>
+        </div>
+        <div class="term" id="lo">
+          {% if log_content %}
+            {% for line in log_content.splitlines() %}
+              {% if 'ALERT' in line or 'ERROR' in line %}<span class="ll AL">{{ line }}</span>
+              {% elif 'WARNING' in line %}<span class="ll WA">{{ line }}</span>
+              {% else %}<span class="ll IN">{{ line }}</span>
+              {% endif %}
+            {% endfor %}
+          {% else %}
+            <span class="t-m">(no log content)</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+  {% elif page == 'config' %}
+    <div class="panel">
+      <div class="ph">
+        <div class="pt"><span class="pt-ic">&#9881;</span>config.yaml <span style="font-size:.7rem;font-weight:400;color:var(--muted)">&#8212; desired system state</span></div>
+        {% if demo_mode %}<span style="font-size:.72rem;color:var(--muted)">edits not persisted in demo mode</span>{% endif %}
+      </div>
+      <div class="pb">
+        <textarea id="ce" spellcheck="false">{{ config_content }}</textarea>
+        <div class="ca">
+          <span id="ss"></span>
+          <button class="btn gh" onclick="rc()">Reset</button>
+          <button class="btn pri" onclick="sc()">
+            <svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            Save config.yaml
+          </button>
+        </div>
+      </div>
+    </div>
+  {% endif %}
+
+  </div>
+</div>
+
+<script>
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+function fmtAction(a){return{provisioner:'Run Provisioner',provisioner_dry_run:'Dry Run',health_check:'Health Check'}[a]||a}
+function fmtTs(ts){
+  var d=new Date(ts),now=new Date(),diff=Math.floor((now-d)/1000);
+  if(diff<60)return diff+'s ago';
+  if(diff<3600)return Math.floor(diff/60)+'m ago';
+  if(diff<86400)return Math.floor(diff/3600)+'h ago';
+  return d.toLocaleDateString();
+}
+
+{% if page == 'dashboard' %}
+// Load logs
+fetch('/api/logs').then(function(r){return r.json()}).then(function(d){
+  var el=document.getElementById('dashLog');
+  var lines=d.content.split('\n').slice(-20);
+  el.innerHTML=lines.map(function(l){
+    if(!l.trim())return'';
+    if(l.indexOf('ALERT')>=0||l.indexOf('ERROR')>=0)return'<span class="t-e">'+esc(l)+'</span>';
+    if(l.indexOf('WARNING')>=0)return'<span class="t-w">'+esc(l)+'</span>';
+    return'<span class="t-d">'+esc(l)+'</span>';
+  }).filter(Boolean).join('\n');
+  el.scrollTop=el.scrollHeight;
+});
+
+// Load run history
+fetch('/api/history').then(function(r){return r.json()}).then(function(d){
+  var el=document.getElementById('histPanel');
+  var hist=d.history||[];
+  if(!hist.length){el.innerHTML='<span style="display:block;padding:16px 0;font-size:.78rem;color:var(--muted)">No runs yet. <a href="/run" style="color:var(--accent)">Run the provisioner</a> to get started.</span>';return;}
+  var rows=hist.slice().reverse().slice(0,8).map(function(h){
+    var ok=h.success;
+    var dot=ok?'<span style="color:var(--green)">&#9679;</span>':'<span style="color:var(--red)">&#9679;</span>';
+    return'<div class="hist-row">'+dot+'<span class="hist-action">'+esc(fmtAction(h.action))+(h.demo?' <span style="font-size:.62rem;color:var(--muted)">[demo]</span>':'')+'</span><span class="hist-lines">'+h.lines+' lines</span><span class="hist-ts">'+fmtTs(h.ts)+'</span></div>';
+  }).join('');
+  el.innerHTML=rows;
+});
+
+// Auto-refresh stats every 15s
+setInterval(function(){
+  fetch('/api/stats').then(function(r){return r.json()}).then(function(s){
+    if(s.disk){
+      var dv=document.getElementById('diskVal');
+      var db=document.getElementById('diskBar');
+      if(dv)dv.textContent=s.disk+'%';
+      if(db){db.style.width=s.disk+'%';db.className='b '+(s.disk>90?'r':s.disk>70?'y':'g');}
+    }
+    if(s.mem!==undefined){
+      var mv=document.getElementById('memVal');
+      var mb=document.getElementById('memBar');
+      if(mv)mv.textContent=s.mem+'%';
+      if(mb){mb.style.width=s.mem+'%';mb.className='b '+(s.mem>90?'r':s.mem>70?'y':'g');}
+    }
+  });
+},15000);
+{% endif %}
+
+{% if page == 'run' %}
+var _act=null;
+var _qp=new URLSearchParams(location.search);
+if(_qp.get('action')==='dry')sel('provisioner_dry_run');
+if(_qp.get('action')==='health')sel('health_check');
+
+// Enter key to run
+document.addEventListener('keydown',function(e){
+  if(e.key==='Enter'&&_act&&!document.getElementById('rb').disabled)run();
+});
+
+function sel(a){
+  _act=a;
+  document.querySelectorAll('.ac').forEach(function(c){c.classList.remove('sel')});
+  var card=document.getElementById('c-'+a);
+  if(card)card.classList.add('sel');
+  var btn=document.getElementById('rb');
+  btn.disabled=false;
+  btn.textContent='Run';
+  var titles={provisioner:'provisioner.py',provisioner_dry_run:'provisioner.py --dry-run',health_check:'health_check.sh'};
+  document.getElementById('tt').textContent=titles[a]||'light-ansible';
+}
+
+function run(){
+  if(!_act)return;
+  var term=document.getElementById('to'),btn=document.getElementById('rb'),st=document.getElementById('rs');
+  term.innerHTML='<span class="t-m">$ sudo python3 provisioner.py'+(_act==='provisioner_dry_run'?' --dry-run':'')+'\n</span>';
+  btn.disabled=true;
+  btn.innerHTML='<span class="spin"></span> Running...';
+  st.textContent='';
+  var es=new EventSource('/api/run/'+_act);
+  es.onmessage=function(e){
+    var line=e.data;
+    if(line.indexOf('[EXIT:')===0){
+      var code=parseInt(line.match(/\d+/)[0]);
+      es.close();
+      btn.disabled=false;btn.textContent='Run';
+      st.textContent=code===0?'✓ Completed':'✗ Failed';
+      st.style.color=code===0?'var(--green)':'var(--red)';
+      var d=document.createElement('span');
+      d.className=code===0?'t-ok':'t-e';
+      d.textContent='\n[Process exited with code '+code+']';
+      term.appendChild(d);term.scrollTop=term.scrollHeight;
+      return;
+    }
+    var sp=document.createElement('span');
+    var l=line.toLowerCase();
+    if(l.indexOf('error')>=0||l.indexOf('failed')>=0)sp.className='t-e';
+    else if(l.indexOf('dry-run')>=0||l.indexOf('would')>=0)sp.className='t-w';
+    else if(l.indexOf('install')>=0||l.indexOf('creat')>=0||l.indexOf('start')>=0)sp.className='t-i';
+    else if(l.indexOf('already')>=0||l.indexOf('nominal')>=0||l.indexOf('present')>=0)sp.className='t-ok';
+    else sp.className='t-d';
+    sp.textContent=line;
+    term.appendChild(sp);term.appendChild(document.createTextNode('\n'));
+    term.scrollTop=term.scrollHeight;
+  };
+  es.onerror=function(){
+    es.close();btn.disabled=false;btn.textContent='Run';
+    var sp=document.createElement('span');sp.className='t-e';
+    sp.textContent='\nConnection error.';term.appendChild(sp);
+  };
+}
+{% endif %}
+
+{% if page == 'logs' %}
+var _allLines=[];
+
+function renderLines(lines){
+  var el=document.getElementById('lo');
+  el.innerHTML=lines.map(function(l){
+    if(!l.trim())return'';
+    if(l.indexOf('ALERT')>=0||l.indexOf('ERROR')>=0)return'<span class="ll AL">'+esc(l)+'</span>';
+    if(l.indexOf('WARNING')>=0)return'<span class="ll WA">'+esc(l)+'</span>';
+    return'<span class="ll IN">'+esc(l)+'</span>';
+  }).filter(Boolean).join('\n');
+  el.scrollTop=el.scrollHeight;
+  var lc=document.getElementById('lineCount');
+  if(lc)lc.textContent=lines.filter(function(l){return l.trim()}).length+' lines';
+}
+
+function filterLogs(){
+  var q=document.getElementById('logSearch').value.toLowerCase();
+  var filtered=q?_allLines.filter(function(l){return l.toLowerCase().indexOf(q)>=0}):_allLines;
+  renderLines(filtered);
+  var fc=document.getElementById('filterCount');
+  if(fc)fc.textContent=q?filtered.length+' match'+(filtered.length!==1?'es':''):'';
+}
+
+function rl(){
+  fetch('/api/logs').then(function(r){return r.json()}).then(function(d){
+    _allLines=d.content.split('\n');
+    filterLogs();
+  });
+}
+
+function clearLogs(){
+  if(!confirm('Clear the log file?'))return;
+  fetch('/api/clear_logs',{method:'POST'}).then(function(r){return r.json()}).then(function(d){
+    if(d.ok){_allLines=[];renderLines([]);document.getElementById('logSearch').value='';}
+  });
+}
+
+// Init
+_allLines=document.getElementById('lo').innerText.split('\n');
+var lc=document.getElementById('lineCount');
+if(lc)lc.textContent=_allLines.filter(function(l){return l.trim()}).length+' lines';
+window.addEventListener('load',function(){var e=document.getElementById('lo');if(e)e.scrollTop=e.scrollHeight;});
+{% endif %}
+
+{% if page == 'config' %}
+var _o=document.getElementById('ce').value;
+function rc(){document.getElementById('ce').value=_o;document.getElementById('ss').textContent='';}
+function sc(){
+  var content=document.getElementById('ce').value,s=document.getElementById('ss');
+  s.textContent='Saving...';s.style.color='var(--muted)';
+  fetch('/api/save_config',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({content:content})})
+    .then(function(r){return r.json()}).then(function(d){
+      s.textContent=d.ok?'✓ Saved':'✗ '+d.error;
+      s.style.color=d.ok?'var(--green)':'var(--red)';
+    });
+}
+{% endif %}
+</script>
+</body>
+</html>

@@ -397,7 +397,7 @@
           <div style="font-size:.82rem;color:var(--text);font-family:'JetBrains Mono',monospace">{{ report.generated_at }}</div>
         </div>
         {% if report.dry_run %}<span style="font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:4px;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.2);color:var(--yellow);font-family:'JetBrains Mono',monospace">DRY RUN</span>{% endif %}
-        {% if report.get('demo') %}<span style="font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:4px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.2);color:var(--accent);font-family:'JetBrains Mono',monospace">DEMO</span>{% endif %}
+        {% if report.demo is defined and report.demo %}<span style="font-size:.7rem;font-weight:600;padding:3px 10px;border-radius:4px;background:rgba(79,195,247,.1);border:1px solid rgba(79,195,247,.2);color:var(--accent);font-family:'JetBrains Mono',monospace">DEMO</span>{% endif %}
         <a href="/run" class="btn gh" style="margin-left:auto">Re-run provisioner</a>
       </div>
 
@@ -415,7 +415,7 @@
           <thead><tr><th>Type</th><th>Name / Path</th><th>Status</th></tr></thead>
           <tbody>
             {% for item in results %}
-            {% set lbl = item.get('name') or item.get('path') %}
+            {% set lbl = item.name if item.name is defined else item.path %}
             {% set s = item.status %}
             {% if s == 'ok' %}{% set cls = 'ok' %}
             {% elif 'would_' in s %}{% set cls = 'dr' %}

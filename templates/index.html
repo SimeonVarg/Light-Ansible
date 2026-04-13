@@ -386,10 +386,17 @@
       </div>
     {% else %}
       {% set results = report.results %}
-      {% set ok_n  = results | selectattr('status','equalto','ok') | list | length %}
-      {% set ch_n  = results | selectattr('status','in',['installed','created','started','stopped','added']) | list | length %}
-      {% set dr_n  = results | selectattr('status','search','would_') | list | length %}
-      {% set sk_n  = results | selectattr('status','search','skipped') | list | length %}
+      {% set ok_n = [] %}
+      {% set ch_n = [] %}
+      {% set dr_n = [] %}
+      {% set sk_n = [] %}
+      {% for r in results %}
+        {% if r.status == 'ok' %}{% if ok_n.append(1) %}{% endif %}
+        {% elif r.status.startswith('would_') %}{% if dr_n.append(1) %}{% endif %}
+        {% elif 'skipped' in r.status %}{% if sk_n.append(1) %}{% endif %}
+        {% else %}{% if ch_n.append(1) %}{% endif %}
+        {% endif %}
+      {% endfor %}
 
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;flex-wrap:wrap">
         <div>
@@ -402,11 +409,11 @@
       </div>
 
       <div class="rs">
-        <div class="rsc"><div class="rsn" style="color:var(--green)">{{ ok_n }}</div><div class="rsl">OK</div></div>
-        <div class="rsc"><div class="rsn" style="color:var(--accent)">{{ ch_n }}</div><div class="rsl">Changed</div></div>
-        <div class="rsc"><div class="rsn" style="color:var(--yellow)">{{ dr_n }}</div><div class="rsl">Would Change</div></div>
-        <div class="rsc"><div class="rsn" style="color:var(--red)">{{ sk_n }}</div><div class="rsl">Skipped</div></div>
-        <div class="rsc"><div class="rsn" style="color:var(--text)">{{ results|length }}</div><div class="rsl">Total</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--green)">{{ ok_n | length }}</div><div class="rsl">OK</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--accent)">{{ ch_n | length }}</div><div class="rsl">Changed</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--yellow)">{{ dr_n | length }}</div><div class="rsl">Would Change</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--red)">{{ sk_n | length }}</div><div class="rsl">Skipped</div></div>
+        <div class="rsc"><div class="rsn" style="color:var(--text)">{{ results | length }}</div><div class="rsl">Total</div></div>
       </div>
 
       <div class="panel">
